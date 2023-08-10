@@ -1,120 +1,128 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-        <title>Babylon.js sample code</title>
-
-        <!-- Babylon.js -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
-        <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
-        <script src="https://cdn.babylonjs.com/ammo.js"></script>
-        <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
-        <script src="https://cdn.babylonjs.com/cannon.js"></script>
-        <script src="https://cdn.babylonjs.com/Oimo.js"></script>
-        <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
-        <script src="https://cdn.babylonjs.com/babylon.js"></script>
-        <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
-        <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
-        <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
-        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
-        <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
-        <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
-        <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
-
-        <style>
-            html, body {
-                overflow: hidden;
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
-
-            #renderCanvas {
-                width: 100%;
-                height: 100%;
-                touch-action: none;
-            }
-            
-            #canvasZone {
-                width: 100%;
-                height: 100%;
-            }
-        </style>
-    </head>
+<head>
+<meta charset="utf-8">
+<title>Create a rotating globe</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
 <body>
-    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
-    <script>
-        var canvas = document.getElementById("renderCanvas");
+<style>
+    #btn-spin {
+        font: bold 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        background-color: #3386c0;
+        color: #fff;
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        z-index: 1;
+        border: none;
+        width: 200px;
+        margin-left: -100px;
+        display: block;
+        cursor: pointer;
+        padding: 10px 20px;
+        border-radius: 3px;
+    }
+    #btn-spin:hover {
+        background-color: #4ea0da;
+    }
+</style>
+<div id="map"></div>
+<button id="btn-spin">Pause rotation</button>
+<script>
+	mapboxgl.accessToken = 'pk.eyJ1IjoiZHNjaHV0dGVyODYiLCJhIjoiY2xoZjhyNDhvMW5zYzNtcGhzMmZ5dmxkYSJ9.ajgjIqYk-AJglDDhc3jeGw';
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/satellite-v9',
+        projection: 'globe', // Display the map as a globe, since satellite-v9 defaults to Mercator
+        zoom: 1.5,
+        center: [-90, 40]
+    });
 
-        var startRenderLoop = function (engine, canvas) {
-            engine.runRenderLoop(function () {
-                if (sceneToRender && sceneToRender.activeCamera) {
-                    sceneToRender.render();
-                }
-            });
+    map.on('style.load', () => {
+        map.setFog({}); // Set the default atmosphere style
+    });
+
+    // The following values can be changed to control rotation speed:
+
+    // At low zooms, complete a revolution every two minutes.
+    const secondsPerRevolution = 120;
+    // Above zoom level 5, do not rotate.
+    const maxSpinZoom = 5;
+    // Rotate at intermediate speeds between zoom levels 3 and 5.
+    const slowSpinZoom = 3;
+
+    let userInteracting = false;
+    let spinEnabled = true;
+
+    function spinGlobe() {
+        const zoom = map.getZoom();
+        if (spinEnabled && !userInteracting && zoom < maxSpinZoom) {
+            let distancePerSecond = 360 / secondsPerRevolution;
+            if (zoom > slowSpinZoom) {
+                // Slow spinning at higher zooms
+                const zoomDif =
+                    (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
+                distancePerSecond *= zoomDif;
+            }
+            const center = map.getCenter();
+            center.lng -= distancePerSecond;
+            // Smoothly animate the map over one second.
+            // When this animation is complete, it calls a 'moveend' event.
+            map.easeTo({ center, duration: 1000, easing: (n) => n });
         }
+    }
 
-        var engine = null;
-        var scene = null;
-        var sceneToRender = null;
-        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
-        var createScene = function () {
-    // This creates a basic Babylon Scene object (non-mesh)
-    var scene = new BABYLON.Scene(engine);
+    // Pause spinning on interaction
+    map.on('mousedown', () => {
+        userInteracting = true;
+    });
 
-    var camera = new BABYLON.ArcRotateCamera("camera", BABYLON.Tools.ToRadians(90), BABYLON.Tools.ToRadians(65), 10, BABYLON.Vector3.Zero(), scene);
+    // Restart spinning the globe when interaction is complete
+    map.on('mouseup', () => {
+        userInteracting = false;
+        spinGlobe();
+    });
 
-    // This attaches the camera to the canvas
-    camera.attachControl(canvas, true);
+    // These events account for cases where the mouse has moved
+    // off the map, so 'mouseup' will not be fired.
+    map.on('dragend', () => {
+        userInteracting = false;
+        spinGlobe();
+    });
+    map.on('pitchend', () => {
+        userInteracting = false;
+        spinGlobe();
+    });
+    map.on('rotateend', () => {
+        userInteracting = false;
+        spinGlobe();
+    });
 
-    // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
-    var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+    // When animation is complete, start spinning if there is no ongoing interaction
+    map.on('moveend', () => {
+        spinGlobe();
+    });
 
-    // Default intensity is 1. Let's dim the light a small amount
-    light.intensity = 0.7;
-
-
-    BABYLON.SceneLoader.ImportMesh(
-        "",
-        "https://dl.dropbox.com/s/9z8byt2awdmmd6u/",
-        "earth1.glb",
-        scene,
-        function (meshes) {          
-            scene.createDefaultCameraOrLight(true, true, true);
-            scene.createDefaultEnvironment();
+    document.getElementById('btn-spin').addEventListener('click', (e) => {
+        spinEnabled = !spinEnabled;
+        if (spinEnabled) {
+            spinGlobe();
+            e.target.innerHTML = 'Pause rotation';
+        } else {
+            map.stop(); // Immediately end ongoing animation
+            e.target.innerHTML = 'Start rotation';
         }
+    });
 
-    );
+    spinGlobe();
+</script>
 
-
-    return scene;
-};
-                window.initFunction = async function() {
-                    
-                    
-                    
-                    var asyncEngineCreation = async function() {
-                        try {
-                        return createDefaultEngine();
-                        } catch(e) {
-                        console.log("the available createEngine function failed. Creating the default engine instead");
-                        return createDefaultEngine();
-                        }
-                    }
-
-                    window.engine = await asyncEngineCreation();
-        if (!engine) throw 'engine should not be null.';
-        startRenderLoop(engine, canvas);
-        window.scene = createScene();};
-        initFunction().then(() => {sceneToRender = scene                    
-        });
-
-        // Resize
-        window.addEventListener("resize", function () {
-            engine.resize();
-        });
-    </script>
 </body>
 </html>
