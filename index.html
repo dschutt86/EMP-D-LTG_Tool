@@ -5,11 +5,11 @@
 	<script defer src="https://cdn.aerisapi.com/sdk/js/1.8.0/aerisweather.min.js"></script>
 	<link rel="stylesheet" href="https://cdn.aerisapi.com/sdk/js/1.8.0/aerisweather.css">
 	<style>
-   body { margin: 0; padding: 0; }
-   #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-  </style>
-  </head>
-  <body>		
+	body { margin: 0; padding: 0; }
+	#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+  	</style>
+</head>
+<body>		
 	
 <div id="map"></div>	
 
@@ -37,9 +37,6 @@ window.addEventListener('load', () => {
             panels: {
                 layers: {
                     buttons: [{
-                            title: "Blue Marble",
-                            value: "blue-marble"
-                        },{
                             title: "Lightning Strikes",
                             value: "lightning-strikes"
                         },{
@@ -70,7 +67,7 @@ window.addEventListener('load', () => {
                 },
                 timeline: {
                     enabled: true,
-                    toggleable: false,
+                    toggleable: true,
                     position: {
                         pin: "bottomleft",
                         translate: {
@@ -120,9 +117,6 @@ window.addEventListener('load', () => {
 			app.map.on('click', (e) => {
 				app.showInfoAtCoord(e.data.coord, 'localweather', 'Local Weather');
 			});
-
-			// select initial layers
-			app.map.addLayers(['blue-marble']);
 		});
 		
 		
