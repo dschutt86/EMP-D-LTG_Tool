@@ -2,11 +2,9 @@
 <html>
 <head>
 	<meta charset="UTF-8">
-	<title>Add 3D terrain to a map</title>
-	<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-	<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
-	<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-<style>
+	<script defer src="https://cdn.aerisapi.com/sdk/js/1.8.0/aerisweather.min.js"></script>
+	<link rel="stylesheet" href="https://cdn.aerisapi.com/sdk/js/1.8.0/aerisweather.css">
+	<style>
 	body { margin: 0; padding: 0; }
 	#map { position: absolute; top: 0; bottom: 0; width: 100%; }
   	</style>
@@ -35,7 +33,6 @@ window.addEventListener('load', () => {
                     from: -10800,
                     to: 0
                 }
-		style: 'mapbox://styles/mapbox/satellite-streets-v12'   
             },
             panels: {
                 layers: {
@@ -126,9 +123,6 @@ window.addEventListener('load', () => {
 				layers: [{
                         title: "Fires",
                         value: "fires-obs"
-                    },{
-                        title: "Fires Outlook",
-                        value: "fires-outlook"
                     }]
 			}).then(({controller, mapsgl }) => {
 				controller.addDataInspectorControl({ event: 'move'});
