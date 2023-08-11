@@ -1,37 +1,145 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>Add 3D terrain to a map</title>
-<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.0-beta.1/mapbox-gl.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.0-beta.1/mapbox-gl.js"></script>
-<style>
-body { margin: 0; padding: 0; }
-#map { position: absolute; top: 0; bottom: 0; width: 100%; }
-</style>
+	<meta charset="UTF-8">
+	<script defer src="https://cdn.aerisapi.com/sdk/js/1.8.0/aerisweather.min.js"></script>
+	<link rel="stylesheet" href="https://cdn.aerisapi.com/sdk/js/1.8.0/aerisweather.css">
+	<style>
+ 		#map {
+			height: 600px;
+			width: 900px;
+    		margin: 30px auto;
+  		}
+  	</style>
 </head>
-<body>
+<body>		
+	
+<div id="map"></div>	
 
-<div id="map"></div>
+<script>	 
+window.addEventListener('load', () => { 
+		
+	const aeris = new AerisWeather('drrm1Tihna8sxWcQM9C5D', 'nfMfFk66EBeo4I6IjJTbhynpoXReetwk8OxdusjG');	
+	const utils = aeris.utils;
 
-<script>
-	mapboxgl.accessToken = 'pk.eyJ1IjoiZHNjaHV0dGVyODYiLCJhIjoiY2xoZjhyNDhvMW5zYzNtcGhzMmZ5dmxkYSJ9.ajgjIqYk-AJglDDhc3jeGw';
-    const map = new mapboxgl.Map({
-        container: 'map',
-        zoom: 9,
-        center: [-74.5, 40],
-        // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
-    });
+	aeris.apps().then((apps) => {
+		const app = new apps.InteractiveMapApp(document.getElementById('map'), {
+            map: {
+                strategy: "mapbox",
+                accessToken: "pk.eyJ1IjoiZHNjaHV0dGVyODYiLCJhIjoiY2xpNWtiNzlhMDR5bDNsbXBrdHZqaTFsdSJ9.AFqJmapzjF4jgElf9E4E8g",
+                zoom: 3.9751155119574983,
+                center: {
+                    lat: 39.7839,
+                    lon: -90.7166
+                },
+                timeline: {
+                    from: -10800,
+                    to: 0
+                }
+            },
+            panels: {
+                layers: {
+                    buttons: [{
+                            title: "Blue Marble",
+                            value: "blue-marble"
+                        },{
+                            title: "Lightning Strikes",
+                            value: "lightning-strikes"
+                        },{
+                            title: "Lightning Strike Density",
+                            value: "lightning-strike-density"
+                        },{
+                            title: "Lightning All",
+                            value: "lightning-all"
+                        },{
+                            title: "Stormcells",
+                            value: "stormcells"
+                        }],
+                    enabled: true,
+                    toggleable: true,
+                    position: {
+                        pin: "topright",
+                        translate: {
+                            x: -10,
+                            y: 10
+                        }
+                    }
+                },
+                timeline: {
+                    enabled: true,
+                    toggleable: true,
+                    position: {
+                        pin: "bottomleft",
+                        translate: {
+                            x: 40,
+                            y: -10
+                        }
+                    }
+                },
+                search: {
+                    enabled: true,
+                    toggleable: true,
+                    position: {
+                        pin: "top",
+                        translate: {
+                            x: 0,
+                            y: 10
+                        }
+                    }
+                },
+                legends: {
+                    enabled: true,
+                    toggleable: true,
+                    position: {
+                        pin: "bottomright",
+                        translate: {
+                            x: -10,
+                            y: -10
+                        }
+                    }
+                },
+                info: {
+                    enabled: true,
+                    position: {
+                        pin: "topleft",
+                        translate: {
+                            x: 10,
+                            y: 10
+                        }
+                    },
+                    metric: false
+                }
+            }
+        });
+		
+		app.on('ready', () => {
+			// show info panel for location when map is clicked
+			app.map.on('click', (e) => {
+				app.showInfoAtCoord(e.data.coord, 'localweather', 'Local Weather');
+			});
 
-
-    map.on('style.load', () => {
-        map.setConfigProperty('basemap', 'showPlaceLabels', true);
-    });
-
-    // Add zoom and rotation controls to the map.
-    map.addControl(new mapboxgl.NavigationControl());
-</script>
+			// select initial layers
+			app.map.addLayers(['blue-marble']);
+			// load in MapsGL sdk and set up relevant layer controls
+			aeris.mapsgl(app, {
+				version: '1.1.0',
+				layers: [{
+                        title: "Fires",
+                        value: "fires-obs"
+                    },{
+                        title: "Fires Outlook",
+                        value: "fires-outlook"
+                    }]
+			}).then(({controller, mapsgl }) => {
+				controller.addDataInspectorControl({ event: 'move'});
+				
+			});
+		});
+		
+		
+	});			
+});
+</script>	
 
 </body>
 </html>
